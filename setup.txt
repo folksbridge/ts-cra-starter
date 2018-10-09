@@ -171,7 +171,13 @@ If enthusiasmLevel is 0 or negative, it should throw an error.
 We can use these requirements to write a few tests for our components.
 
 yarn add enzyme enzyme-adapter-react-16 react-test-renderer -D
-    note: problems if install @types/enzyme @types/enzyme-adapter-react-16
+    note: 
+    First, problems with yarn add @types/enzyme @types/enzyme-adapter-react-16 -D
+    then unistalled them
+    then problem with Jest
+    then reinstalled accoring error message
+    after Redux, added them back, all working now
+    
 Enzyme is a common tool in the React ecosystem that makes it easier to write tests for how components will behave. By default, our application includes a library called jsdom to allow us to simulate the DOM and test its runtime behavior without a browser. Enzyme is similar, but builds on jsdom and makes it easier to make certain queries about our components.
 
 Before writing the first test, we have to configure Enzyme to use an adapter for React 16. We'll create a file called src/setupTests.ts that is automatically loaded when running tests:

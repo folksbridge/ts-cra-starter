@@ -7,6 +7,10 @@ const defaultState: StoreState = {
     enthusiasmLevel: 1
 };
 
+it("javaScript", () => {
+    expect(enthusiasm(defaultState, decrementEnthusiasm()).languageName).toEqual("javaScript");
+});
+
 it("Increase to 2", () => {
     expect(enthusiasm(defaultState, incrementEnthusiasm()).enthusiasmLevel).toEqual(2);
 });
