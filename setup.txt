@@ -1,0 +1,224 @@
+TypeScript React Starter
+==========================
+https://github.com/Microsoft/TypeScript-React-Starter#typescript-react-starter
+
+a project with React and TypeScript
+linting with TSLint
+testing with Jest and Enzyme, and
+state management with Redux
+create-react-app tool is used to quickly get set up.
+
+=============================
+npx create-react-app ts-cra2 --scripts-version=react-scripts-ts
+    react-scripts-ts is a set of adjustments to take the standard create-react-app project pipeline and bring TypeScript into the mix.
+
+git init
+git add .
+git commit -m "Initial commit."
+
+update tslint.json:
+    {
+    -  "extends": ["tslint:recommended", "tslint-react", "tslint-config-prettier"],
+    +  "extends": [],
+    +  "defaultSeverity": "warning",
+    "linterOptions": {
+        "exclude": [
+        "config/**/*.js",
+        "node_modules/**/*.ts"
+        ]
+    }
+    }
+
+yarn start
+    http://localhost:3000
+yarn test
+    Jest testing utility, against all files whose extensions end in .test.ts or .spec.ts. 
+    App.test.tsx = included sample of smoke test
+yarn build
+    This will create an optimized JS and CSS build in ./build/static/js and ./build/static/css respectively.
+
+// src/components/Hello.tsx
+
+import * as React from 'react';
+
+export interface Props {
+  name: string;
+  enthusiasmLevel?: number;
+}
+
+function Hello({ name, enthusiasmLevel = 1 }: Props) {
+  if (enthusiasmLevel <= 0) {
+    throw new Error('You could be a little more enthusiastic. :D');
+  }
+
+  return (
+    <div className="hello">
+      <div className="greeting">
+        Hello {name + getExclamationMarks(enthusiasmLevel)}
+      </div>
+    </div>
+  );
+}
+
+export default Hello;
+
+Class version of the function above:
+    class Hello extends React.Component<Props, object> {
+        render() {
+            const { name, enthusiasmLevel = 1 } = this.props;
+
+            if (enthusiasmLevel <= 0) {
+            throw new Error('You could be a little more enthusiastic. :D');
+            }
+
+            return (
+            <div className="hello">
+                <div className="greeting">
+                Hello {name + getExclamationMarks(enthusiasmLevel)}
+                </div>
+            </div>
+            );
+        }
+    }
+    Classes are useful when our component instances have some state or need to handle lifecycle hooks. 
+    React.Component<Props, object>. The TypeScript-specific bit here are the type arguments we're passing to React.Component: Props and object. Here, Props is the type of our class's this.props, and object is the type of this.state. 
+
+update ./src/index.tsx:
+    import Hello from './components/Hello';
+    ReactDOM.render(
+        <Hello name="TypeScript" enthusiasmLevel={10} />,
+        document.getElementById('root') as HTMLElement
+    );
+
+a stateful version of our Hello component:
+    // src/components/StatefulHello.tsx
+
+    import * as React from "react";
+
+    export interface Props {
+        name: string;
+        enthusiasmLevel?: number;
+    }
+
+    interface State {
+        currentEnthusiasm: number;
+    }
+
+    class Hello extends React.Component<Props, State> {
+        constructor(props: Props) {
+            super(props);
+            this.state = { currentEnthusiasm: props.enthusiasmLevel || 1 };
+        }
+
+    onIncrement = () => this.updateEnthusiasm(this.state.currentEnthusiasm + 1);
+    onDecrement = () => this.updateEnthusiasm(this.state.currentEnthusiasm - 1);
+
+    render() {
+        const { name } = this.props;
+
+        if (this.state.currentEnthusiasm <= 0) {
+            throw new Error('You could be a little more enthusiastic. :D');
+        }
+
+        return (
+        <div className="hello">
+            <div className="greeting">
+            Hello {name + getExclamationMarks(this.state.currentEnthusiasm)}
+            </div>
+            <button onClick={this.onDecrement}>-</button>
+            <button onClick={this.onIncrement}>+</button>
+        </div>
+        );
+    }
+
+    updateEnthusiasm(currentEnthusiasm: number) {
+        this.setState({ currentEnthusiasm });
+    }
+    }
+
+    export default Hello;
+
+    function getExclamationMarks(numChars: number) {
+        return Array(numChars + 1).join('!');
+    }
+    Declaring these as arrow functions avoids issues with orphaned uses of this.
+    Setting them as instance properties creates them only once - a common mistake is to initialize them in the render method which allocates closures one every call to render.
+
+.src/components/Hello.css
+    .hello {
+        text-align: center;
+        margin: 20px;
+        font-size: 48px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hello button {
+        margin-left: 25px;
+        margin-right: 25px;
+        font-size: 40px;
+        min-width: 50px;
+    }
+    The tools that create-react-app uses (namely, Webpack and various loaders) allow us to just import the stylesheets' Any imported .css files will be concatenated into an output file. So in src/components/Hello.tsx, we'll add the following import: import './Hello.css';
+
+Testing
+===========================
+We had a certain set of assumptions about our Hello component. Let's reiterate what they were:
+
+When we write something like <Hello name="Daniel" enthusiasmLevel={3} />, the component should render to something like <div>Hello Daniel!!!</div>.
+If enthusiasmLevel isn't specified, the component should default to showing one exclamation mark.
+If enthusiasmLevel is 0 or negative, it should throw an error.
+
+We can use these requirements to write a few tests for our components.
+
+yarn add enzyme enzyme-adapter-react-16 react-test-renderer -D
+    note: problems if install @types/enzyme @types/enzyme-adapter-react-16
+Enzyme is a common tool in the React ecosystem that makes it easier to write tests for how components will behave. By default, our application includes a library called jsdom to allow us to simulate the DOM and test its runtime behavior without a browser. Enzyme is similar, but builds on jsdom and makes it easier to make certain queries about our components.
+
+Before writing the first test, we have to configure Enzyme to use an adapter for React 16. We'll create a file called src/setupTests.ts that is automatically loaded when running tests:
+    import * as enzyme from 'enzyme';
+    import * as Adapter from 'enzyme-adapter-react-16';
+    enzyme.configure({ adapter: new Adapter() });
+
+Let's create a file named src/components/Hello.test.tsx, adjacent to our Hello.tsx file from earlier.
+    import * as React from 'react';
+    import * as enzyme from 'enzyme';
+    import Hello from './Hello';
+
+    it('renders the correct text when no enthusiasm level is given', () => {
+        const hello = enzyme.shallow(<Hello name='Daniel' />);
+        expect(hello.find(".greeting").text()).toEqual('Hello Daniel!')
+    });
+    
+    it('renders the correct text with an explicit enthusiasm of 1', () => {
+        const hello = enzyme.shallow(<Hello name='Daniel' enthusiasmLevel={1}/>);
+        expect(hello.find(".greeting").text()).toEqual('Hello Daniel!')
+    });
+    
+    it('renders the correct text with an explicit enthusiasm level of 5', () => {
+        const hello = enzyme.shallow(<Hello name='Daniel' enthusiasmLevel={5} />);
+        expect(hello.find(".greeting").text()).toEqual('Hello Daniel!!!!!');
+    });
+    
+    it('throws when the enthusiasm level is 0', () => {
+        expect(() => {
+        enzyme.shallow(<Hello name='Daniel' enthusiasmLevel={0} />);
+        }).toThrow();
+    });
+    
+    it('throws when the enthusiasm level is negative', () => {
+        expect(() => {
+        enzyme.shallow(<Hello name='Daniel' enthusiasmLevel={-1} />);
+        }).toThrow();
+    });
+yarn test
+yarn test -- --coverage
+============================
+Adding state management
+============================
+React is a useful library for creating composable views. However, React doesn't prescribe any specific way of synchronizing data throughout your application.React on its own does not focus on application state management.
+As far as a React component is concerned, data flows down through its children through the props. Some of those props might be functions that update the state one way or another.
+
+Redux relies on synchronizing data through a centralized and immutable store of data, and updates to that data will trigger a re-render of our application. State is updated in an immutable fashion by sending explicit action messages which must be handled by functions called reducers. Because of the explicit nature, it is often easier to reason about how an action will affect the state of your program.
+
+MobX relies on functional reactive patterns where state is wrapped through observables and passed through as props. Keeping state fully synchronized for any observers is done by simply marking state as observable. As a nice bonus, the library is already written in TypeScript.
+
